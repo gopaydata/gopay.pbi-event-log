@@ -103,7 +103,7 @@ class Component(ComponentBase):
         df = pd.DataFrame(columns=key, dtype='string')
         df.to_csv(out_table_path, mode='w', header=True, index=False)
 
-        for x in range(1, 8):
+        for x in range(0, 8):
             df = pd.DataFrame(columns=key, dtype='string')
             self.activityDate = date.today() - timedelta(days=x)
             self.activityDate = self.activityDate.strftime("%Y-%m-%d")
