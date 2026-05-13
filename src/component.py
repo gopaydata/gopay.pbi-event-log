@@ -11,16 +11,19 @@ from keboola.component.base import ComponentBase
 from keboola.component.exceptions import UserException
 
 # configuration variables
-KEY_CLIENT_ID = '#client_id'
-KEY_PASSWORD = '#password'
-KEY_USERNAME = '#username'
+KEY_CLIENT_ID = 'client_id'
+KEY_CLIENT_SECRET = '#client_secret'
+KEY_TENANT_ID = 'tenant_id'
 KEY_INCREMENTAL = 'incremental'
-KEY_AUTHORITY_URL = '#authority_url'
-KEY_ACCESS_TOKEN = 'access_token'
 
 # list of mandatory parameters => if some is missing,
 # component will fail with readable message on initialization.
-REQUIRED_PARAMETERS = [KEY_CLIENT_ID, KEY_PASSWORD, KEY_USERNAME, KEY_INCREMENTAL, KEY_AUTHORITY_URL, KEY_ACCESS_TOKEN]
+REQUIRED_PARAMETERS = [
+    KEY_CLIENT_ID,
+    KEY_CLIENT_SECRET,
+    KEY_TENANT_ID,
+    KEY_INCREMENTAL
+]
 REQUIRED_IMAGE_PARS = []
 
 
@@ -50,20 +53,34 @@ class Component(ComponentBase):
     def get_api_token(self):
         params = self.configuration.parameters
 
-        url = "https://login.microsoftonline.com/common/oauth2/token"
+        tenant_id = params.get(KEY_TENANT_ID)
+        client_id = params.get(KEY_CLIENT_ID)
+        client_secret = params.get(KEY_CLIENT_SECRET)
+
+        url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+
         body = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "client_id": params.get(KEY_CLIENT_ID),
-            "scope": "openid",
-            "resource": "https://analysis.windows.net/powerbi/api",
-            "grant_type": "password",
-            "password": params.get(KEY_PASSWORD),
-            "username": params.get(KEY_USERNAME)
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": "https://analysis.windows.net/powerbi/api/.default"
         }
 
-        response = requests.post(url, data=body).json()
-        self.access_token = response['access_token']
-#         print(self.access_token)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        response = requests.post(url, data=body, headers=headers)
+
+        if not response.ok:
+            raise UserException(
+                f"Failed to get Power BI access token: "
+                f"{response.status_code} - {response.text}"
+            )
+
+        token_data = response.json()
+        self.access_token = token_data["access_token"]
+        print(self.access_token)
 
     def run(self):
         """
@@ -129,7 +146,7 @@ class Component(ComponentBase):
             df1 = pd.DataFrame(result, dtype='string')
             if not df1.empty:
                 df1 = df1[df1.Activity != 'ExportActivityEvents']
-            pd.concat([df, df1])
+            df = pd.concat([df, df1])
 
             # Call Continuation URL as long as results get one back to get all activities through the day
             while cont_url is not None:

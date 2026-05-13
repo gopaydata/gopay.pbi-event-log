@@ -1,83 +1,173 @@
-PBI event logs
-=============
+````md
+# GoPay Power BI Event Logs Extractor
 
-Description
+Extract Power BI activity event logs via Power BI Admin REST API.
 
-**Table of contents:**
+---
 
-[TOC]
+# Description
 
-Functionality notes
-===================
+This component downloads Power BI audit and activity logs using the Power BI Admin API endpoint:
 
-Prerequisites
-=============
+```text
+GET /v1.0/myorg/admin/activityevents
+````
 
-Get the API token, register application, etc.
+The extractor stores activity logs into Keboola output tables for further analysis, monitoring, auditing, and reporting.
 
-Features
-========
+---
 
-| **Feature**             | **Note**                                      |
-|-------------------------|-----------------------------------------------|
-| Generic UI form         | Dynamic UI form                               |
-| Row Based configuration | Allows structuring the configuration in rows. |
-| oAuth                   | oAuth authentication enabled                  |
-| Incremental loading     | Allows fetching data in new increments.       |
-| Backfill mode           | Support for seamless backfill setup.          |
-| Date range filter       | Specify date range.                           |
+# Functionality Notes
 
-Supported endpoints
-===================
+The component uses Azure AD Service Principal authentication (`client_credentials` OAuth2 flow).
 
-If you need more endpoints, please submit your request to
-[ideas.keboola.com](https://ideas.keboola.com/)
+Fetched data includes:
 
-Configuration
-=============
+* User activity
+* Report usage
+* Dataset activity
+* Workspace operations
+* Sharing events
+* Consumption metrics
+* Distribution methods
+* Success/failure information
 
-Param 1
--------
+The component downloads logs for the last 8 days.
 
-Param 2
--------
+---
 
-Output
-======
+# Prerequisites
 
-List of tables, foreign keys, schema.
+Before using this extractor:
 
-Development
------------
+1. Create an Azure App Registration
+2. Generate a Client Secret
+3. Enable Power BI Service API permissions
+4. Allow Service Principals in Power BI Admin Portal
+5. Grant the application Power BI admin permissions if required
 
-If required, change local data folder (the `CUSTOM_FOLDER` placeholder) path to
-your custom path in the `docker-compose.yml` file:
+The Service Principal must have permission to access the Power BI Admin APIs.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    volumes:
-      - ./:/code
-      - ./CUSTOM_FOLDER:/data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Required configuration parameters:
 
-Clone this repository, init the workspace and run the component with following
-command:
+| Parameter       | Description                   |
+| --------------- | ----------------------------- |
+| `client_id`     | Azure Application (Client) ID |
+| `client_secret` | Azure Client Secret VALUE     |
+| `tenant_id`     | Azure Directory (Tenant) ID   |
+| `incremental`   | Enables incremental loading   |
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-git clone https://github.com/husic77/petr-husa.ex-pbi-event-logs pbi_event_logs
-cd pbi_event_logs
+---
+
+# Authentication
+
+The component authenticates using OAuth2 Client Credentials flow.
+
+Token endpoint:
+
+```text
+https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token
+```
+
+Request body:
+
+```text
+grant_type=client_credentials
+client_id=<client_id>
+client_secret=<client_secret>
+scope=https://analysis.windows.net/powerbi/api/.default
+```
+
+---
+
+# Features
+
+| Feature                 | Description                               |
+| ----------------------- | ----------------------------------------- |
+| OAuth2 Authentication   | Azure AD Service Principal authentication |
+| Incremental Loading     | Supports incremental table loading        |
+| Activity Log Extraction | Downloads Power BI activity events        |
+| Pagination Support      | Uses continuation URI handling            |
+| Multi-day Extraction    | Downloads data for the last 8 days        |
+| CSV Output              | Stores data into Keboola output tables    |
+
+---
+
+# Output
+
+Generated output tables:
+
+```text
+data/out/tables/pbi_event_logs.csv
+```
+
+Main columns:
+
+| Column              | Description            |
+| ------------------- | ---------------------- |
+| `Id`                | Event ID               |
+| `CreationTime`      | Event timestamp        |
+| `Operation`         | Executed operation     |
+| `UserId`            | User performing action |
+| `Activity`          | Activity type          |
+| `WorkspaceId`       | Workspace identifier   |
+| `DatasetId`         | Dataset identifier     |
+| `ReportId`          | Report identifier      |
+| `ArtifactName`      | Artifact name          |
+| `ArtifactKind`      | Artifact type          |
+| `IsSuccess`         | Success flag           |
+| `ConsumptionMethod` | Consumption method     |
+
+---
+
+# Used APIs
+
+Authentication:
+
+```text
+https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token
+```
+
+Power BI REST API:
+
+```text
+GET /v1.0/myorg/admin/activityevents
+```
+
+---
+
+# Development
+
+If required, change local data folder path in `docker-compose.yml`:
+
+```yaml
+volumes:
+  - ./:/code
+  - ./CUSTOM_FOLDER:/data
+```
+
+Clone repository and run locally:
+
+```bash
+git clone https://github.com/gopaydata/gopay.pbi-event-log gopay.pbi-event-log
+cd gopay.pbi-event-log
 docker-compose build
 docker-compose run --rm dev
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
-Run the test suite and lint check using this command:
+Run tests:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```bash
 docker-compose run --rm test
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
-Integration
-===========
+---
 
-For information about deployment and integration with KBC, please refer to the
-[deployment section of developers
-documentation](https://developers.keboola.com/extend/component/deployment/)
+# Integration
+
+For deployment and Keboola integration documentation:
+
+https://developers.keboola.com/extend/component/deployment/
+
+```
+```

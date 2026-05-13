@@ -3,34 +3,39 @@
   "type": "object",
   "title": "extractor configuration",
   "required": [
-    "#client_id",
-    "#username",
-    "#password",
+    "client_id",
+    "#client_secret",
+    "tenant_id",
     "incremental"
   ],
   "properties": {
-    "#password": {
-      "type": "string",
-      "title": "Password",
-      "propertyOrder": 30,
-      "description": "Power BI password"
-    },
-    "#username": {
-      "type": "string",
-      "title": "Username",
-      "propertyOrder": 20,
-      "description": "Power BI username"
-    },
-    "#client_id": {
+    "client_id": {
       "type": "string",
       "title": "Client ID",
-      "propertyOrder": 10
+      "propertyOrder": 10,
+      "description": "Azure Application (client) ID"
     },
+
+    "#client_secret": {
+      "type": "string",
+      "title": "Client Secret",
+      "propertyOrder": 20,
+      "description": "Azure App Registration secret VALUE"
+    },
+
+    "tenant_id": {
+      "type": "string",
+      "title": "Tenant ID",
+      "propertyOrder": 30,
+      "description": "Azure Tenant ID"
+    },
+
     "incremental": {
       "type": "boolean",
       "title": "Incremental",
       "default": false,
-      "format": "checkbox"
+      "format": "checkbox",
+      "propertyOrder": 40
     }
   }
 }
